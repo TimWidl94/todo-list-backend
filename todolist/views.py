@@ -8,6 +8,9 @@ from todolist.serializers import TodoItemSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from rest_framework import generics
+from .serializers import RegistrationSerializer
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -42,3 +45,28 @@ class TodoItemView(APIView):
         todos = TodoItem.objects.filter(author=request.user)
         serializer = TodoItemSerializer(todos, many=True)
         return Response(serializer.data)
+    
+class RegistrationView(generics.CreateAPIView):
+    serializer_class = RegistrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        if created:
+            user.set_password(validated_data['password'])
+            user.save()
+        else:
+            return Response({'detail': 'User already exists'}, status=400)
+
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'email': user.email
+        })
+      
