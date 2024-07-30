@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework import generics
 from .serializers import RegistrationSerializer
 from django.contrib.auth.models import User
+import logging
 
 # Create your views here.
 
@@ -37,14 +38,32 @@ class LogoutView(APIView):
         return Response({'detail': 'Logged out successfully'}, status=status.HTTP_200_OK)
         
 class TodoItemView(APIView):
-
     authentication_classes = [TokenAuthentication]
-    permission_classes = {IsAuthenticated}
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
         todos = TodoItem.objects.filter(author=request.user)
         serializer = TodoItemSerializer(todos, many=True)
         return Response(serializer.data)
+    
+    def post(self, request, format=None):
+        logging.debug(f'Request user: {request.user}, Request data: {request.data}')
+        if not request.user.is_authenticated:
+            logging.error("User is not authenticated")
+            return Response({"error": "User is not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Ensure author is not in the request data
+        request_data = request.data.copy()
+        request_data.pop('author', None)
+
+        serializer = TodoItemSerializer(data=request_data, context={'request': request})
+        if serializer.is_valid():
+            logging.debug(f"Serializer valid with data: {serializer.validated_data}")
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        logging.error(f'Serializer errors: {serializer.errors}')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class RegistrationView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
