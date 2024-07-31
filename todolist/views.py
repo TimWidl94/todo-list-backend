@@ -65,6 +65,21 @@ class TodoItemView(APIView):
         logging.error(f'Serializer errors: {serializer.errors}')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    def put(self, request, id, format=None):
+        logging.debug(f'Request user: {request.user}, Request data: {request.data}')
+        try:
+            todo = TodoItem.objects.get(pk=id, author=request.user)
+        except TodoItem.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TodoItemSerializer(todo, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        
+        logging.error(f'Serializer errors: {serializer.errors}')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class RegistrationView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
 

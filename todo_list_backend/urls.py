@@ -24,5 +24,6 @@ urlpatterns = [
     path('login/', LoginView.as_view()),
     path('todos/', TodoItemView.as_view()),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('register/', RegistrationView.as_view(), name='register')
+    path('register/', RegistrationView.as_view(), name='register'),
+    path('todos/<int:id>/', TodoItemView.as_view(), name='todo-update'),
 ]
