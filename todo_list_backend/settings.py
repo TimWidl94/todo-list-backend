@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    'https://timwidl.pythonanywhere.com/'
 ]
 
 CORS_ALLOWED_ORIGINS = ['http://localhost:4200','127.0.0.1']
